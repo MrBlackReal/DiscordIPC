@@ -105,13 +105,4 @@ public interface IPCListener {
      */
     default void onDisconnect(IPCClient client, Throwable t) {
     }
-
-    /**
-     * Fired whenever an {@link IPCClient} obtained the local user from discord,
-     *
-     * @param client The IPCClient receiving the event.
-     * @param user      {@link User} user.
-     */
-    default void onUserObtained(IPCClient client, User user) {
-    }
 }

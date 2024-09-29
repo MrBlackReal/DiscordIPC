@@ -20,6 +20,7 @@ import com.jagrosh.discordipc.entities.Packet.OpCode;
 import com.jagrosh.discordipc.entities.pipe.Pipe;
 import com.jagrosh.discordipc.entities.pipe.PipeStatus;
 import com.jagrosh.discordipc.exceptions.NoDiscordClientException;
+import org.jetbrains.annotations.Nullable;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.slf4j.Logger;
@@ -428,5 +429,9 @@ public final class IPCClient implements Closeable {
     private static int getPID() {
         String pr = ManagementFactory.getRuntimeMXBean().getName();
         return Integer.parseInt(pr.substring(0, pr.indexOf('@')));
+    }
+
+    public @Nullable User getUser() {
+        return pipe.getUser();
     }
 }

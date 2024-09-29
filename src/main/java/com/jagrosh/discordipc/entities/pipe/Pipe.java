@@ -23,6 +23,8 @@ import com.jagrosh.discordipc.entities.DiscordBuild;
 import com.jagrosh.discordipc.entities.Packet;
 import com.jagrosh.discordipc.entities.User;
 import com.jagrosh.discordipc.exceptions.NoDiscordClientException;
+import lombok.Getter;
+import org.jetbrains.annotations.NotNull;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.slf4j.Logger;
@@ -42,12 +44,15 @@ public abstract class Pipe {
     final IPCClient ipcClient;
     private final HashMap<String, Callback> callbacks;
 
+    @Getter
+    private User user;
+
     Pipe(IPCClient ipcClient, HashMap<String, Callback> callbacks) {
         this.ipcClient = ipcClient;
         this.callbacks = callbacks;
     }
 
-    public static Pipe openPipe(IPCClient ipcClient, long clientId, HashMap<String, Callback> callbacks, DiscordBuild... preferredOrder) throws NoDiscordClientException {
+    public static @NotNull Pipe openPipe(IPCClient ipcClient, long clientId, HashMap<String, Callback> callbacks, DiscordBuild... preferredOrder) throws NoDiscordClientException {
         if (preferredOrder == null || preferredOrder.length == 0) preferredOrder = new DiscordBuild[]{DiscordBuild.ANY};
 
         Pipe pipe = null;
@@ -65,13 +70,11 @@ public abstract class Pipe {
                 Packet p = pipe.read(); // this is a valid client at this point
                 JSONObject data = p.getJson().getJSONObject("data");
 
+                System.err.println(data.toString(4));
+
                 if (data.has("user")) {
                     JSONObject userObj = data.getJSONObject("user");
-                    User user = new User(userObj.getString("username"), "0", userObj.getLong("id"), userObj.getString("avatar"));
-                    if (pipe.listener != null) {
-                        pipe.listener.onUserObtained(ipcClient, user);
-                        System.out.println("obtained user");
-                    }
+                    pipe.user = new User(userObj.getString("username"), "0", userObj.getLong("id"), userObj.getString("avatar"));
                 }
 
                 pipe.build = DiscordBuild.from(data.getJSONObject("config").getString("api_endpoint"));
