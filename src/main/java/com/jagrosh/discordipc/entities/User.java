@@ -24,6 +24,7 @@ package com.jagrosh.discordipc.entities;
  * @author John Grosh (john.a.grosh@gmail.com)
  */
 public class User {
+
     private final String name;
     private final String discriminator;
     private final long id;

@@ -57,7 +57,7 @@ public final class IPCClient implements Closeable {
 
     private final long clientId;
     private final HashMap<String, Callback> callbacks = new HashMap<>();
-    private volatile Pipe pipe;
+    private static volatile Pipe pipe;
     private IPCListener listener = null;
     private Thread readThread = null;
 
@@ -389,7 +389,7 @@ public final class IPCClient implements Closeable {
                                     System.out.println(u);
                                     User user = new User(
                                             u.getString("username"),
-                                            u.getString("discriminator"),
+                                            "0",
                                             Long.parseLong(u.getString("id")),
                                             u.optString("avatar", null)
                                     );
@@ -435,5 +435,9 @@ public final class IPCClient implements Closeable {
     private static int getPID() {
         String pr = ManagementFactory.getRuntimeMXBean().getName();
         return Integer.parseInt(pr.substring(0, pr.indexOf('@')));
+    }
+
+    public static User getUser() {
+        return Pipe.getUser();
     }
 }
