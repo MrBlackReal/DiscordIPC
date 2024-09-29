@@ -28,7 +28,6 @@ import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.print.MultiDocPrintService;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.UUID;
@@ -37,7 +36,6 @@ public abstract class Pipe {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(Pipe.class);
     private static final int VERSION = 1;
-    private static User currentUser;
     PipeStatus status = PipeStatus.CONNECTING;
     IPCListener listener;
     private DiscordBuild build;
@@ -50,7 +48,6 @@ public abstract class Pipe {
     }
 
     public static Pipe openPipe(IPCClient ipcClient, long clientId, HashMap<String, Callback> callbacks, DiscordBuild... preferredOrder) throws NoDiscordClientException {
-
         if (preferredOrder == null || preferredOrder.length == 0) preferredOrder = new DiscordBuild[]{DiscordBuild.ANY};
 
         Pipe pipe = null;
@@ -60,7 +57,7 @@ public abstract class Pipe {
         for (int i = 0; i < 10; i++) {
             try {
                 String location = getPipeLocation(i);
-                LOGGER.debug(String.format("Searching for IPC: %s", location));
+                LOGGER.debug("Searching for IPC: {}", location);
                 pipe = createPipe(ipcClient, callbacks, location);
 
                 pipe.send(Packet.OpCode.HANDSHAKE, new JSONObject().put("v", VERSION).put("client_id", Long.toString(clientId)), null);
@@ -68,19 +65,21 @@ public abstract class Pipe {
                 Packet p = pipe.read(); // this is a valid client at this point
                 JSONObject data = p.getJson().getJSONObject("data");
 
-                System.out.println(data.toString(4));
-
                 if (data.has("user")) {
-                    JSONObject user = data.getJSONObject("user");
-                    currentUser = new User(user.getString("username"), "0", user.getLong("id"), user.getString("avatar"));
+                    JSONObject userObj = data.getJSONObject("user");
+                    User user = new User(userObj.getString("username"), "0", userObj.getLong("id"), userObj.getString("avatar"));
+                    if (pipe.listener != null) {
+                        pipe.listener.onUserObtained(ipcClient, user);
+                        System.out.println("obtained user");
+                    }
                 }
 
                 pipe.build = DiscordBuild.from(data.getJSONObject("config").getString("api_endpoint"));
 
-                LOGGER.debug(String.format("Found a valid client (%s) with packet: %s", pipe.build.name(), p));
+                LOGGER.debug("Found a valid client ({}) with packet: {}", pipe.build.name(), p);
                 // we're done if we found our first choice
                 if (pipe.build == preferredOrder[0] || DiscordBuild.ANY == preferredOrder[0]) {
-                    LOGGER.info(String.format("Found preferred client: %s", pipe.build.name()));
+                    LOGGER.info("Found preferred client: {}", pipe.build.name());
                     break;
                 }
 
@@ -99,7 +98,7 @@ public abstract class Pipe {
             // check each of the rest to see if we have that
             for (int i = 1; i < preferredOrder.length; i++) {
                 DiscordBuild cb = preferredOrder[i];
-                LOGGER.debug(String.format("Looking for client build: %s", cb.name()));
+                LOGGER.debug("Looking for client build: {}", cb.name());
                 if (open[cb.ordinal()] != null) {
                     pipe = open[cb.ordinal()];
                     open[cb.ordinal()] = null;
@@ -113,7 +112,7 @@ public abstract class Pipe {
                         }
                     } else pipe.build = cb;
 
-                    LOGGER.info(String.format("Found preferred client: %s", pipe.build.name()));
+                    LOGGER.info("Found preferred client: {}", pipe.build.name());
                     break;
                 }
             }
@@ -169,7 +168,7 @@ public abstract class Pipe {
             Packet p = new Packet(op, data.put("nonce", nonce));
             if (callback != null && !callback.isEmpty()) callbacks.put(nonce, callback);
             write(p.toBytes());
-            LOGGER.debug(String.format("Sent packet: %s", p.toString()));
+            LOGGER.debug("Sent packet: {}", p);
             if (listener != null) listener.onPacketSent(ipcClient, p);
         } catch (IOException ex) {
             LOGGER.error("Encountered an IOException while sending a packet and disconnected!");
@@ -234,9 +233,5 @@ public abstract class Pipe {
         }
         if (tmppath == null) tmppath = "/tmp";
         return tmppath + "/discord-ipc-" + i;
-    }
-
-    public static User getUser() {
-        return currentUser;
     }
 }

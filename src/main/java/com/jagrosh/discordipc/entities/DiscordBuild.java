@@ -64,11 +64,9 @@ public enum DiscordBuild {
      * {@link DiscordBuild#ANY} if none match.
      */
     public static DiscordBuild from(String endpoint) {
-        for (DiscordBuild value : values()) {
-            if (value.endpoint != null && value.endpoint.equals(endpoint)) {
+        for (DiscordBuild value : values())
+            if (value.endpoint != null && value.endpoint.equals(endpoint))
                 return value;
-            }
-        }
         return ANY;
     }
 }

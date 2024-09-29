@@ -26,6 +26,7 @@ package com.jagrosh.discordipc.entities;
 public class User {
 
     private final String name;
+    @Deprecated
     private final String discriminator;
     private final long id;
     private final String avatar;
@@ -60,6 +61,7 @@ public class User {
      *
      * @return The Users discriminator.
      */
+    @Deprecated
     public String getDiscriminator() {
         return discriminator;
     }

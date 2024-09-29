@@ -55,6 +55,8 @@ import java.util.HashMap;
  */
 public final class IPCClient implements Closeable {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(IPCClient.class);
+
     private final long clientId;
     private final HashMap<String, Callback> callbacks = new HashMap<>();
     private static volatile Pipe pipe;
@@ -107,7 +109,7 @@ public final class IPCClient implements Closeable {
 
         pipe = Pipe.openPipe(this, clientId, callbacks, preferredOrder);
 
-        System.out.println("Client is now connected and ready!");
+        LOGGER.info("Client is now connected and ready!");
         if (listener != null)
             listener.onReady(this);
         startReading();
@@ -148,7 +150,7 @@ public final class IPCClient implements Closeable {
      */
     public void sendRichPresence(RichPresence presence, Callback callback) {
         checkConnected(true);
-        System.out.printf("Sending RichPresence to discord: %s%n", presence == null ? null : presence.toJson().toString());
+        LOGGER.info("Sending RichPresence to discord: {}", presence == null ? null : presence.toJson().toString());
 
         JSONObject data = new JSONObject();
         data.put("cmd", "SET_ACTIVITY");
@@ -203,7 +205,7 @@ public final class IPCClient implements Closeable {
         checkConnected(true);
         if (!sub.isSubscribable())
             throw new IllegalStateException("Cannot subscribe to " + sub + " event!");
-        System.out.println(String.format("Subscribing to Event: %s", sub.name()));
+        LOGGER.info("Subscribing to Event: {}", sub.name());
         pipe.send(OpCode.FRAME, new JSONObject()
                 .put("cmd", "SUBSCRIBE")
                 .put("evt", sub.name()), callback);
@@ -234,8 +236,7 @@ public final class IPCClient implements Closeable {
         try {
             pipe.close();
         } catch (IOException e) {
-            System.out.println("Failed to close pipe");
-            e.printStackTrace();
+            LOGGER.error("Failed to close pipe!", e);
         }
     }
 
@@ -330,13 +331,12 @@ public final class IPCClient implements Closeable {
                 Packet p;
 
                 while ((p = pipe.read()).getCode() != OpCode.CLOSE) {
-                    System.out.println(p);
                     JSONObject json = p.getJson();
                     Event event = Event.of(json.optString("evt", null));
                     String nonce = json.optString("nonce", null);
 
                     if (event != null) {
-                        System.out.println(json.optString("evt", "none") + " -> \n" + json.toString(4));
+                        LOGGER.info("{} -> \n{}", json.optString("evt", "none"), json.toString(4));
                     }
 
                     switch (event) {
@@ -351,19 +351,19 @@ public final class IPCClient implements Closeable {
                             break;
 
                         case ACTIVITY_JOIN:
-                            System.out.println("Reading thread received a 'join' event.");
+                            LOGGER.info("Reading thread received a 'join' event.");
                             break;
 
                         case ACTIVITY_SPECTATE:
-                            System.out.println("Reading thread received a 'spectate' event.");
+                            LOGGER.info("Reading thread received a 'spectate' event.");
                             break;
 
                         case ACTIVITY_JOIN_REQUEST:
-                            System.out.println("Reading thread received a 'join request' event.");
+                            LOGGER.info("Reading thread received a 'join request' event.");
                             break;
 
                         case UNKNOWN:
-                            System.out.println("Reading thread encountered an event with an unknown type: " + json.getString("evt"));
+                            LOGGER.info("Reading thread encountered an event with an unknown type: {}", json.getString("evt"));
                             break;
                     }
 
@@ -371,8 +371,6 @@ public final class IPCClient implements Closeable {
                         try {
                             JSONObject data = json.getJSONObject("data");
                             Event evt = Event.of(json.getString("evt"));
-
-                            System.out.println(evt);
 
                             switch (evt) {
                                 case ACTIVITY_JOIN:
@@ -384,9 +382,7 @@ public final class IPCClient implements Closeable {
                                     break;
 
                                 case ACTIVITY_JOIN_REQUEST:
-                                    System.out.println(data);
                                     JSONObject u = data.getJSONObject("user");
-                                    System.out.println(u);
                                     User user = new User(
                                             u.getString("username"),
                                             "0",
@@ -397,8 +393,7 @@ public final class IPCClient implements Closeable {
                                     break;
                             }
                         } catch (Exception e) {
-                            System.err.println("Exception when handling event: ");
-                            e.printStackTrace();
+                            LOGGER.error("Exception when handling event: ", e);
                         }
                     }
                 }
@@ -408,11 +403,9 @@ public final class IPCClient implements Closeable {
                     listener.onClose(this, p.getJson());
             } catch (IOException | JSONException ex) {
                 if (ex instanceof IOException)
-                    System.err.println("Reading thread encountered an IOException");
+                    LOGGER.error("Reading thread encountered an IOException", ex);
                 else
-                    System.err.println("Reading thread encountered an JSONException");
-
-                ex.printStackTrace();
+                    LOGGER.error("Reading thread encountered an JSONException", ex);
 
                 pipe.setStatus(PipeStatus.DISCONNECTED);
 
@@ -421,7 +414,7 @@ public final class IPCClient implements Closeable {
             }
         });
 
-        System.out.println("Starting IPCClient reading thread!");
+        LOGGER.info("Starting IPCClient reading thread!");
         readThread.start();
     }
 
@@ -435,9 +428,5 @@ public final class IPCClient implements Closeable {
     private static int getPID() {
         String pr = ManagementFactory.getRuntimeMXBean().getName();
         return Integer.parseInt(pr.substring(0, pr.indexOf('@')));
-    }
-
-    public static User getUser() {
-        return Pipe.getUser();
     }
 }
