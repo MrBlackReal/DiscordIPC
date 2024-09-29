@@ -17,6 +17,7 @@ package com.jagrosh.discordipc.entities;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+
 import org.json.JSONObject;
 
 /**
@@ -25,20 +26,19 @@ import org.json.JSONObject;
  *
  * @author John Grosh (john.a.grosh@gmail.com)
  */
-public class Packet
-{
-    private final OpCode op;
+public class Packet {
+
+    private final OpCode code;
     private final JSONObject data;
 
     /**
      * Constructs a new Packet using an {@link OpCode} and {@link JSONObject}.
      *
-     * @param op The OpCode value of this new Packet.
+     * @param code The OpCode value of this new Packet.
      * @param data The JSONObject payload of this new Packet.
      */
-    public Packet(OpCode op, JSONObject data)
-    {
-        this.op = op;
+    public Packet(OpCode code, JSONObject data) {
+        this.code = code;
         this.data = data;
     }
 
@@ -47,11 +47,10 @@ public class Packet
      *
      * @return This Packet as a {@code byte} array.
      */
-    public byte[] toBytes()
-    {
+    public byte[] toBytes() {
         byte[] d = data.toString().getBytes(StandardCharsets.UTF_8);
-        ByteBuffer packet = ByteBuffer.allocate(d.length + 2*Integer.BYTES);
-        packet.putInt(Integer.reverseBytes(op.ordinal()));
+        ByteBuffer packet = ByteBuffer.allocate(d.length + 2 * Integer.BYTES);
+        packet.putInt(Integer.reverseBytes(code.ordinal()));
         packet.putInt(Integer.reverseBytes(d.length));
         packet.put(d);
         return packet.array();
@@ -62,9 +61,8 @@ public class Packet
      *
      * @return This Packet's OpCode.
      */
-    public OpCode getOp()
-    {
-        return op;
+    public OpCode getCode() {
+        return code;
     }
 
     /**
@@ -72,15 +70,13 @@ public class Packet
      *
      * @return The JSONObject value of this Packet.
      */
-    public JSONObject getJson()
-    {
+    public JSONObject getJson() {
         return data;
     }
-    
+
     @Override
-    public String toString()
-    {
-        return "Pkt:"+getOp()+getJson().toString();
+    public String toString() {
+        return "Pkt:" + getCode() + getJson().toString();
     }
 
     /**
@@ -89,8 +85,7 @@ public class Packet
      * and the {@link com.jagrosh.discordipc.IPCClient IPCClient}
      * connected.
      */
-    public enum OpCode
-    {
+    public enum OpCode {
         HANDSHAKE, FRAME, CLOSE, PING, PONG
     }
 }

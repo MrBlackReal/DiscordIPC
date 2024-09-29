@@ -70,6 +70,8 @@ public abstract class Pipe {
 
                 Packet p = pipe.read(); // this is a valid client at this point
 
+                System.err.println(p);
+
                 pipe.build = DiscordBuild.from(p.getJson().getJSONObject("data")
                         .getJSONObject("config")
                         .getString("api_endpoint"));
