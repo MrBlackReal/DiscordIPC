@@ -78,9 +78,11 @@ public class UnixPipe extends Pipe {
 
         is.read(d);
         Packet p = new Packet(op, new JSONObject(new String(d)));
-        System.out.println(String.format("Pipe: Received packet: %s", p));
+        LOGGER.debug("Pipe: Received packet: {}", p);
+
         if (listener != null)
             listener.onPacketReceived(ipcClient, p);
+
         return p;
     }
 

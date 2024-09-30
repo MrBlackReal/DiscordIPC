@@ -337,7 +337,7 @@ public final class IPCClient implements Closeable {
                     String nonce = json.optString("nonce", null);
 
                     if (event != null) {
-                        LOGGER.info("{} -> \n{}", json.optString("evt", "none"), json.toString(4));
+                        LOGGER.debug("{} -> \n{}", json.optString("evt", "none"), json.toString(4));
                     }
 
                     switch (event) {

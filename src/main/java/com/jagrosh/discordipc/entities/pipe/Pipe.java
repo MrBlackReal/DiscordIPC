@@ -70,8 +70,6 @@ public abstract class Pipe {
                 Packet p = pipe.read(); // this is a valid client at this point
                 JSONObject data = p.getJson().getJSONObject("data");
 
-                System.err.println(data.toString(4));
-
                 if (data.has("user")) {
                     JSONObject userObj = data.getJSONObject("user");
                     pipe.user = new User(userObj.getString("username"), "0", userObj.getLong("id"), userObj.getString("avatar"));
